@@ -8,7 +8,7 @@ except ImportError:
     JSONDecodeError = ValueError
 from threading import Thread, Lock
 import requests
-from apikit import APIFlask as apf
+from apikit import APIFlask
 from apikit import BackendError
 from flask import jsonify
 
@@ -17,13 +17,13 @@ def server(run_standalone=False):
     """Create the app and then run it."""
     # Add "/ltdstatus" for mapping behind api.lsst.codes
     baseuri = "https://keeper.lsst.codes"
-    app = apf(name="uservice-ltdstatus",
-              version="0.0.1",
-              repository="https://github.com/sqre-lsst/" +
-              "sqre-uservice-ltdstatus",
-              description="API wrapper for LSST The Docs product status",
-              route=["/", "/ltdstatus"],
-              auth={"type": "none"})
+    app = APIFlask(name="uservice-ltdstatus",
+                   version="0.0.1",
+                   repository="https://github.com/sqre-lsst/" +
+                   "sqre-uservice-ltdstatus",
+                   description="API wrapper for LSST The Docs product status",
+                   route=["/", "/ltdstatus"],
+                   auth={"type": "none"})
 
     # Linter can't understand decorators.
     @app.errorhandler(BackendError)
@@ -76,7 +76,7 @@ def _get_product_list(baseuri):
     url = baseuri + "/products"
     resp = requests.get(url)
     _check_response(resp)
-    rdict = json.loads(resp.text)
+    rdict = resp.json()
     return rdict["products"]
 
 
@@ -118,7 +118,7 @@ def _check_product(baseuri, product, mutex, responses):
         _check_response(resp)
         # Only store successful URL fetches for the actual documents.
         #  Store failures for whatever failed.
-        rdict = json.loads(resp.text)
+        rdict = resp.json()
         puburl = rdict["published_url"]
         prodname = rdict["slug"]
         mutex.acquire()
@@ -130,7 +130,7 @@ def _check_product(baseuri, product, mutex, responses):
         edurl = baseuri + "/products/" + prodname + "/editions"
         resp = requests.get(edurl)
         _check_response(resp)
-        edict = json.loads(resp.text)
+        edict = resp.json()
         edition = edict["editions"]
         edthreads = []
         for edt in edition:
@@ -170,7 +170,7 @@ def _check_edition(edition, prodname, puburl, mutex, responses):
     try:
         resp = requests.get(edition)
         _check_response(resp)
-        edobj = json.loads(resp.text)
+        edobj = resp.json()
     except (BackendError, JSONDecodeError) as exc:
         if isinstance(exc, JSONDecodeError):
             resp.status_code = 500
