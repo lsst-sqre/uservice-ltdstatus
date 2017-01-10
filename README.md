@@ -30,19 +30,17 @@ product if the `main` edition has ever been built, and `null` otherwise.
 
 `editions` is a JSON object where the keys are edition names (or the
 attempted URL if the edition name cannot be found).  The value of each
-edition is a JSON object with three keys, `is_published_url`,
-`status_code`, and `url`.
+edition is a JSON object with three keys, `url`, `status_code`, and
+`url_type`.
 
 `url` is the URL that was attempted to be fetched, as a string.
 `status_code` is the status code of the HTTP request.
-`is_published_url` is a boolean stating whether the URL retrieved was
-listed as a published URL for an edition.  If it is `false`, that and an
-HTTP error code indicates a problem with the request or with
-keeper.lsst.codes, while if it is true, it indicates a problem with
-Fastly, which is failing to serve a published product.
+`url_type` is a string, and is one of `product`, `product_editions`,
+`product_edition`, or `product_edition_published_url`.  This represents
+what sort of URL was being fetched.
 
-In a normal run, over all products, `is_published_url` should always be
-`true` and `status_code` should always be 200.
+In a normal run, over all products, `url_type` should always be
+`product_edition_published_url`, and `status_code` should always be 200.
 
 The HTTP status of the response containing the returned structure will
 be the largest status code returned by any of the individual requests.
