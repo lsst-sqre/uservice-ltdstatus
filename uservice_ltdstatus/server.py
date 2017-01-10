@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 """LSST The Docs microservice framework to get LTD product status"""
-import json
 # Python 2/3 compatibility
 try:
     from json.decoder import JSONDecodeError
@@ -113,6 +112,14 @@ def _check_product(baseuri, product, mutex, responses):
     """Check a given product and its editions."""
     # pylint: disable=too-many-locals
     prodname = ""
+    # url_type is one of:
+    #   1) product
+    #   2) product_editions
+    #   3) product_edition
+    #   4) product_edition_published_url
+    # We use this to determine what kind of URL we were getting when
+    #  a fetch failed or failed to decode.
+    url_type = "product"
     resp = requests.get(product)
     try:
         _check_response(resp)
@@ -128,6 +135,7 @@ def _check_product(baseuri, product, mutex, responses):
         finally:
             mutex.release()
         edurl = baseuri + "/products/" + prodname + "/editions"
+        url_type = "product_editions"
         resp = requests.get(edurl)
         _check_response(resp)
         edict = resp.json()
@@ -157,7 +165,7 @@ def _check_product(baseuri, product, mutex, responses):
             mutex.release()
         badprod = {"url": rurl,
                    "status_code": resp.status_code,
-                   "is_published_url": False}
+                   "url_type": url_type}
         mutex.acquire()
         try:
             responses[prodname]["editions"][rurl] = badprod
@@ -167,6 +175,7 @@ def _check_product(baseuri, product, mutex, responses):
 
 def _check_edition(edition, prodname, puburl, mutex, responses):
     """Check a given edition."""
+    url_type = "product_edition"
     try:
         resp = requests.get(edition)
         _check_response(resp)
@@ -178,7 +187,7 @@ def _check_edition(edition, prodname, puburl, mutex, responses):
             resp.text = "Could not decode: " + resp.text
         baded = {"url": resp.url,
                  "status_code": resp.status_code,
-                 "is_published_url": False}
+                 "url_type": url_type}
         # Fake edition name since we don't know it
         mutex.acquire()
         try:
@@ -197,9 +206,10 @@ def _check_edition(edition, prodname, puburl, mutex, responses):
                 mutex.release()
         return  # Do not check if never built.
     resp = requests.get(edpuburl)
+    url_type = "product_edition_published_url"
     edres = {"url": resp.url,
              "status_code": resp.status_code,
-             "is_published_url": True}
+             "url_type": url_type}
     mutex.acquire()
     try:
         responses[prodname]["editions"][ver] = edres
