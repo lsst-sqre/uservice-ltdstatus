@@ -17,7 +17,7 @@ def server(run_standalone=False):
     # Add "/ltdstatus" for mapping behind api.lsst.codes
     baseuri = "https://keeper.lsst.codes"
     app = APIFlask(name="uservice-ltdstatus",
-                   version="0.0.1",
+                   version="0.0.2",
                    repository="https://github.com/sqre-lsst/" +
                    "sqre-uservice-ltdstatus",
                    description="API wrapper for LSST The Docs product status",
@@ -59,6 +59,8 @@ def server(run_standalone=False):
 
     if run_standalone:
         app.run(host='0.0.0.0', threaded=True)
+    # Return app if running under uwsgi
+    return app
 
 
 def _get_max_status_code(responses):
