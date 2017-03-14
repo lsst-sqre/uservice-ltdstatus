@@ -18,4 +18,6 @@ spec:
             -
               containerPort: 5000
               name: u-ltdstatus
-              
+          env:
+            - name: LOGLEVEL
+              value: INFO

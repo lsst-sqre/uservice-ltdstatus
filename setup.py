@@ -9,7 +9,7 @@ DESCRIPTION = 'LSST The Docs microservice framework to get LTD product status'
 AUTHOR = 'Adam Thornton'
 AUTHOR_EMAIL = 'athornton@lsst.org'
 URL = 'https://github.com/lsst-sqre/sqre-uservice-productstatus'
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 LICENSE = 'MIT'
 
 
@@ -41,8 +41,8 @@ setup(
     keywords='lsst',
     packages=find_packages(exclude=['docs', 'tests*']),
     install_requires=[
-        'sqre-apikit==0.0.10',
-        'requests==2.8.1',
+        'sqre-apikit==0.1.1',
+        'requests>=2.8.1,<3.0.0',
         'uWSGI==2.0.14'
     ],
     tests_require=['pytest'],
