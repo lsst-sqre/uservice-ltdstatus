@@ -11,25 +11,32 @@ from apikit import APIFlask
 from apikit import BackendError
 from flask import jsonify
 
+log = None
+
 
 def server(run_standalone=False):
     """Create the app and then run it."""
     # Add "/ltdstatus" for mapping behind api.lsst.codes
     baseuri = "https://keeper.lsst.codes"
     app = APIFlask(name="uservice-ltdstatus",
-                   version="0.0.2",
+                   version="0.0.3",
                    repository="https://github.com/sqre-lsst/" +
                    "sqre-uservice-ltdstatus",
                    description="API wrapper for LSST The Docs product status",
                    route=["/", "/ltdstatus"],
                    auth={"type": "none"})
+    # This is kind of nasty.
+    global log
+    log = app.config["LOGGER"]
 
     # Linter can't understand decorators.
     @app.errorhandler(BackendError)
     # pylint: disable=unused-variable
     def handle_invalid_usage(error):
         """Custom error handler."""
-        response = jsonify(error.to_dict())
+        errdict = error.to_dict()
+        log.error(errdict)
+        response = jsonify(errdict)
         response.status_code = error.status_code
         return response
 
@@ -75,6 +82,7 @@ def _get_max_status_code(responses):
 def _get_product_list(baseuri):
     """Get the available products."""
     url = baseuri + "/products"
+    log.debug("Getting product list from %s" % url)
     resp = requests.get(url)
     _check_response(resp)
     rdict = resp.json()
@@ -122,6 +130,7 @@ def _check_product(baseuri, product, mutex, responses):
     # We use this to determine what kind of URL we were getting when
     #  a fetch failed or failed to decode.
     url_type = "product"
+    log.info("Getting product from %s" % product)
     resp = requests.get(product)
     try:
         _check_response(resp)
@@ -138,6 +147,7 @@ def _check_product(baseuri, product, mutex, responses):
             mutex.release()
         edurl = baseuri + "/products/" + prodname + "/editions"
         url_type = "product_editions"
+        log.debug("Determining product editions from %s" % edurl)
         resp = requests.get(edurl)
         _check_response(resp)
         edict = resp.json()
@@ -179,6 +189,7 @@ def _check_edition(edition, prodname, puburl, mutex, responses):
     """Check a given edition."""
     url_type = "product_edition"
     try:
+        log.info("Getting edition from %s" % edition)
         resp = requests.get(edition)
         _check_response(resp)
         edobj = resp.json()
@@ -207,6 +218,7 @@ def _check_edition(edition, prodname, puburl, mutex, responses):
             finally:
                 mutex.release()
         return  # Do not check if never built.
+    log.info("Getting published edition URL %s" % edpuburl)
     resp = requests.get(edpuburl)
     url_type = "product_edition_published_url"
     edres = {"url": resp.url,
